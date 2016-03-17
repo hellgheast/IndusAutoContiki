@@ -4,6 +4,13 @@
 *.obj
 *.elf
 
+# Makefile files
+*.d
+
+#Contiki z1 files
+*.z1
+*.map
+
 # Precompiled Headers
 *.gch
 *.pch

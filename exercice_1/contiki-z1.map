@@ -2894,9 +2894,9 @@ LOAD /usr/local/msp430/bin/../lib/gcc/msp430/4.7.0/mcpu-430x/mmpy-16/msr20/mc20/
  .stab          0x0002799c      0x654 contiki-z1.a(mac-sequence.o)
                                0x1794 (size before relaxing)
 
-.stabstr        0x00000000    0x1c29d
+.stabstr        0x00000000    0x1c2c1
  *(.stabstr)
- .stabstr       0x00000000    0x1c29d blink_application.co
+ .stabstr       0x00000000    0x1c2c1 blink_application.co
 
 .stab.excl
  *(.stab.excl)
