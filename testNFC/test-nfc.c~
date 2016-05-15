@@ -25,9 +25,9 @@ PROCESS_THREAD(test_adc, ev, data)
 	if(status){ 
 		leds_toggle(LEDS_BLUE);
 	}
-	uint32_t versiondata=getFirmwareVersion();
-  printf("Found chip PN532"); 
-  setPassiveActivationRetries(0xFF);
+	//uint32_t versiondata=getFirmwareVersion();
+  //printf("Found chip PN532"); 
+  //setPassiveActivationRetries(0xFF);
   uint8_t success;                          // Flag to check if there was an error with the PN532
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   uint8_t uidLength=0;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)

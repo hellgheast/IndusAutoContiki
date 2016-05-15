@@ -18,10 +18,10 @@
 #include <string.h>
 #include <core/sys/timer.h>
 
-uint8_t pn532ack[] = {0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00};
-uint8_t pn532response_firmwarevers[] = {0x00, 0xFF, 0x06, 0xFA, 0xD5, 0x03};
+static uint8_t pn532ack[] = {0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00};
+static uint8_t pn532response_firmwarevers[] = {0x00, 0xFF, 0x06, 0xFA, 0xD5, 0x03};
 #define PN532_PACKBUFFSIZ 64
-uint8_t pn532_packetbuffer[PN532_PACKBUFFSIZ];
+
 
 static uint8_t wirereadstatus(){
  		//(P4IN & 0x01) != 0
@@ -34,8 +34,8 @@ static uint8_t wirereadstatus(){
 }
 
 static void wiresendcommand(uint8_t * cmd, uint8_t cmdlen){
-  uint8_t aTemp[PN532_PACKBUFFSIZ];
-	uint8_t aPacketDataChecksum;
+  volatile static uint8_t aTemp[PN532_PACKBUFFSIZ];
+	volatile static uint8_t aPacketDataChecksum;
 	aTemp[0]=0x00;
 	aTemp[1]=0x00;
 	aTemp[2]=0xFF;
@@ -43,7 +43,7 @@ static void wiresendcommand(uint8_t * cmd, uint8_t cmdlen){
 	aTemp[4]=0-cmdlen-2;
 	aTemp[5]=PN532_HOSTTOPN532;
 	aPacketDataChecksum=0-0xD4;
-	uint8_t i;
+	static uint8_t i;
 	for(i=0;i<cmdlen;i++){
 		aTemp[6+i]=cmd[i];
 		aPacketDataChecksum-=cmd[i];
@@ -62,8 +62,8 @@ static void wiresendcommand(uint8_t * cmd, uint8_t cmdlen){
 }
 
 static void wirereaddata(uint8_t* buff, uint8_t n){
-	uint8_t STATUS;
-	uint8_t aTemp[PN532_PACKBUFFSIZ]; 
+	static uint8_t STATUS;
+	static uint8_t aTemp[PN532_PACKBUFFSIZ]; 
 	i2c_enable();
 	do{
   	i2c_receiveinit(PN532_I2C_ADDRESS);
@@ -73,7 +73,7 @@ static void wirereaddata(uint8_t* buff, uint8_t n){
 	}while((STATUS&0x01)==0x00);
 	i2c_receiveinit(PN532_I2C_ADDRESS);
   while(i2c_busy());
-	i2c_receive_n(n, aTemp);
+	i2c_receive_n(n+1, aTemp);
   while(i2c_busy());
   uint8_t i;
 	printf("\nrecieved:");
@@ -84,7 +84,7 @@ static void wirereaddata(uint8_t* buff, uint8_t n){
 }
 
 uint8_t sendCommandCheckAck(uint8_t *cmd, uint8_t cmdlen){
-	uint8_t ackbuff[6];	
+	static uint8_t ackbuff[6];	
 	wiresendcommand(cmd, cmdlen);
   while(wirereadstatus()==PN532_I2C_BUSY);
   wirereaddata(ackbuff, 6);
@@ -94,7 +94,8 @@ uint8_t sendCommandCheckAck(uint8_t *cmd, uint8_t cmdlen){
 
 
 uint8_t setPassiveActivationRetries(uint8_t maxRetries) {
-  pn532_packetbuffer[0] = PN532_COMMAND_RFCONFIGURATION;
+	static uint8_t pn532_packetbuffer[5];  
+	pn532_packetbuffer[0] = PN532_COMMAND_RFCONFIGURATION;
   pn532_packetbuffer[1] = 5;    // Config item 5 (MaxRetries)
   pn532_packetbuffer[2] = 0xFF; // MxRtyATR (default = 0xFF)
   pn532_packetbuffer[3] = 0x01; // MxRtyPSL (default = 0x01)
@@ -112,6 +113,7 @@ uint8_t SAMConfig(void){
   P4DIR&= ~0x01; // set the port as input
   P4SEL &= ~0x01;                  
   P4REN |=  0x01;   
+	static uint8_t pn532_packetbuffer[4];
 	pn532_packetbuffer[0] = PN532_COMMAND_SAMCONFIGURATION;
   pn532_packetbuffer[1] = 0x01; // normal mode;
   pn532_packetbuffer[2] = 0x14; // timeout 50ms * 20 = 1 second
@@ -129,7 +131,7 @@ uint8_t SAMConfig(void){
 
 uint32_t getFirmwareVersion(void) {
   uint32_t response;
-
+	static uint8_t pn532_packetbuffer[13];
   pn532_packetbuffer[0] = PN532_COMMAND_GETFIRMWAREVERSION;
 
   if (! sendCommandCheckAck(pn532_packetbuffer, 1))
@@ -155,8 +157,9 @@ uint32_t getFirmwareVersion(void) {
 }
 
 uint8_t readPassiveTargetID(uint8_t cardbaudrate, uint8_t * uid, uint8_t * uidLength) {
-  pn532_packetbuffer[0] = PN532_COMMAND_INLISTPASSIVETARGET;
-  pn532_packetbuffer[1] = 1;  // max 1 cards at once (we can set this to 2 later)
+	static uint8_t pn532_packetbuffer[21];  
+	pn532_packetbuffer[0] = PN532_COMMAND_INLISTPASSIVETARGET;
+  pn532_packetbuffer[1] = 1;
   pn532_packetbuffer[2] = cardbaudrate;
   
 	sendCommandCheckAck(pn532_packetbuffer, 3);

@@ -3,7 +3,7 @@
 #include "contiki.h"
 #include "dev/leds.h"
 #include "sys/clock.h"
-#include "dev/i2cmaster.h"
+#include "dev/spi.h"
 #include "pn532.h"
 
 #define PN532_ADDRESS (0x48)
